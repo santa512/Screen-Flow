@@ -1,0 +1,15 @@
+<Application x:Class="ScreenFlow.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:ScreenFlow" ThemeMode="System">
+ <Application.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="Assets/Brand.xaml"/></ResourceDictionary.MergedDictionaries>
+  <local:StepNumberConverter x:Key="StepNumber"/>
+  <FontFamily x:Key="InterfaceFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+  <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI</FontFamily>
+  <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+  <Style TargetType="local:IconLabel"><Style.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger></Style.Triggers></Style>
+  <Style TargetType="Window"><Setter Property="FontFamily" Value="{StaticResource InterfaceFont}"/><Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/><Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBaseBrush}"/><Setter Property="UseLayoutRounding" Value="True"/></Style>
+  <Style x:Key="SectionLabel" TargetType="TextBlock"><Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/></Style>
+  <Style x:Key="SecondaryText" TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/><Setter Property="FontSize" Value="12"/></Style>
+  </ResourceDictionary>
+ </Application.Resources>
+</Application>

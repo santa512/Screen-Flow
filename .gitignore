@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+dist/
+*.user
+*.tmp
+self-test-results.txt
+ui-test-results.txt
+browser-test-results.txt
+.packages/
+.build/
