@@ -58,7 +58,7 @@ Selection prefers a supported browser already in the foreground, followed by the
 
 For Octo, open the desired profile first, bring its browser window to the front, then start the workflow. With multiple profiles open, the foreground profile takes priority; otherwise the most recently used profile is preferred. The Octo profile manager is not selected as a browser window. Ctrl+T, URL copying, typing, mouse actions, and visual image matching operate on the visible browser and its real websites using the same native input pipeline. No profile API or DOM connection is required.
 
-Octo support is enabled in the production application. Development tests use synthetic Octium window records and ScreenFlow's own practice fixture; they never control Octo or visit real websites. Live Octo compatibility has not been tested by the assistant.
+Octo support is enabled in the production application. Development tests use synthetic Octium window records and ScreenFlow's own practice fixture; they never control Octo or visit real websites.
 
 If no browser is open or Windows denies foreground activation, the action stops with an error before sending the shortcut. It also rechecks focus immediately before `Ctrl+T`. Existing saved workflows retain their behavior; add **Focus browser** first if you want to bring the browser forward before your own hotkey actions.
 
