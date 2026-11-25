@@ -26,6 +26,9 @@ if ($Publish) {
     & dotnet publish $project --no-restore -c Release -r win-x64 --self-contained true -o (Join-Path $PSScriptRoot 'dist\ScreenFlow-Production')
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $PSScriptRoot 'dist\ScreenFlow-Production\README.md') -Force
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'CHANGELOG.md') -Destination (Join-Path $PSScriptRoot 'dist\ScreenFlow-Production\CHANGELOG.md') -Force
+    New-Item -ItemType Directory -Path (Join-Path $PSScriptRoot 'dist\ScreenFlow-Production\docs') -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'docs\USAGE.md') -Destination (Join-Path $PSScriptRoot 'dist\ScreenFlow-Production\docs\USAGE.md') -Force
     Write-Host "Application: $PSScriptRoot\dist\ScreenFlow-Production\ScreenFlow.exe"
 }
 } finally {
