@@ -25,11 +25,15 @@ Native Windows workflow automation using mouse input, keyboard shortcuts, and co
 
 | Category | Available actions |
 | --- | --- |
-| Mouse | Click, double click, right click, move, scroll |
+| Flow control | If / Else / End if, Loop, Loop while, End loop, Exit loop, Label, Go to label, Stop workflow |
+| Mouse | Click, double click, right click, middle click, move, drag and drop, scroll |
 | Keyboard | Unicode text, shortcuts, Enter, Tab |
-| Vision | Find image and click; wait for image |
+| Vision | Find image and click; wait for image; "image is visible" conditions |
 | Browser | Focus window; new tab via Ctrl+T |
-| Data | Copy page URL, read clipboard, set variable |
+| Windows and apps | Launch application, open file or URL, focus / wait for / close window, run command, take screenshot |
+| Dialogs | Show message, ask for input |
+| Variables and text | Copy page URL, read / set clipboard, set variable, increase variable, transform text, date and time, random number |
+| Files | Read text file, write or append text file |
 | Timing | Delays, pause after action, repeated workflows |
 
 ## Workflow reference
@@ -38,6 +42,9 @@ Native Windows workflow automation using mouse input, keyboard shortcuts, and co
 - Editing: reorder, duplicate, remove, enable/disable; selection-dependent controls.
 - Variables: `{{name}}`; letters/digits/underscores; leading letter or underscore.
 - Values: shared across steps and repeat cycles; reset on each run.
+- Blocks: If and Loop add their End automatically; actions insert below the selected step; nested blocks are indented.
+- Conditions: equals, contains, starts / ends with, empty, greater / less than (numeric when both sides are numbers), regex, image visible, window exists, file exists.
+- Disabling an If or Loop switches off its whole block.
 - URL handoff: copy URL into `url` → switch tab → click field → type `{{url}}`.
 - Built-in examples: new browser tab, URL handoff; local practice window.
 - Execution errors and image timeouts: workflow stops; details in the activity log.

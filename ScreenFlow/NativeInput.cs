@@ -70,13 +70,31 @@ public static class NativeInput
         token.ThrowIfCancellationRequested();
         Move(x, y);
         await Task.Delay(70, token);
-        uint down = kind == ActionKind.RightClick ? 8u : 2u;
+        uint down = kind switch { ActionKind.RightClick => 8u, ActionKind.MiddleClick => 0x20u, _ => 2u };
         for (int i = 0; i < (kind == ActionKind.DoubleClick ? 2 : 1); i++) {
             token.ThrowIfCancellationRequested();
             Send(new Input { Data = new InputUnion { Mouse = new MouseInput { Flags = down } } },
                 new Input { Data = new InputUnion { Mouse = new MouseInput { Flags = down * 2 } } });
             if (kind == ActionKind.DoubleClick) await Task.Delay(80, token);
         }
+    }
+    public static async Task Drag(int fromX, int fromY, int toX, int toY, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        Move(fromX, fromY);
+        if (!System.Windows.Forms.SystemInformation.VirtualScreen.Contains(toX, toY)) throw new ArgumentException($"Point ({toX}, {toY}) is outside the connected displays.");
+        await Task.Delay(70, token);
+        Send(new Input { Data = new InputUnion { Mouse = new MouseInput { Flags = 2 } } });
+        try {
+            // Move in small steps so drag-and-drop targets see real intermediate mouse movement.
+            const int steps = 20;
+            for (int i = 1; i <= steps; i++) {
+                token.ThrowIfCancellationRequested();
+                SetCursorPos(fromX + (toX - fromX) * i / steps, fromY + (toY - fromY) * i / steps);
+                await Task.Delay(15, token);
+            }
+            await Task.Delay(60, token);
+        } finally { Send(new Input { Data = new InputUnion { Mouse = new MouseInput { Flags = 4 } } }); }
     }
     public static void Scroll(int notches) => Send(new Input { Data = new InputUnion { Mouse = new MouseInput { Flags = 0x800, MouseData = unchecked((uint)(notches * 120)) } } });
     public static async Task TypeText(string text, CancellationToken token)

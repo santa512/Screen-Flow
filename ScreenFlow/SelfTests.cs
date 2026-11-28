@@ -85,6 +85,54 @@ public static class SelfTests
             try { Task.Run(() => runner.Run(new Workflow { Steps = new() { new Step { Kind = ActionKind.Delay, DelayMs = 10000 } } }, stop.Token)).GetAwaiter().GetResult(); throw new Exception("Cancellation failed"); }
             catch (OperationCanceledException) { }
         });
+        Check("If / Else / Loop / Exit loop / Go to run in the right order", () => {
+            Step S(ActionKind kind, string text = "", string variable = "x", ConditionKind condition = ConditionKind.Equals, string value = "", int count = 3, bool enabled = true) =>
+                new() { Kind = kind, Text = text, Variable = variable, Condition = condition, Value = value, Count = count, Amount = 1, DelayMs = 0, Enabled = enabled };
+            string Trace(params Step[] steps) {
+                var runner = new WorkflowRunner(Dispatcher.CurrentDispatcher);
+                var all = new List<Step> { S(ActionKind.SetVariable, "", "trace") };
+                foreach (var step in steps) {
+                    all.Add(step);
+                    // Record every visible action by appending its text to {{trace}}.
+                    if (step.Kind == ActionKind.SetClipboard) { step.Kind = ActionKind.SetVariable; step.Variable = "trace"; step.Text = "{{trace}}" + step.Text + ","; }
+                }
+                runner.Run(new Workflow { Steps = new(all) }, CancellationToken.None).GetAwaiter().GetResult();
+                return runner.Values["trace"].TrimEnd(',');
+            }
+            var T = ActionKind.SetClipboard;
+            Assert(Trace(S(ActionKind.SetVariable, "5", "n"), S(ActionKind.If, "{{n}}", condition: ConditionKind.GreaterThan, value: "10"), S(T, "big"), S(ActionKind.Else), S(T, "small"), S(ActionKind.EndIf), S(T, "end")) == "small,end", "If/Else");
+            Assert(Trace(S(ActionKind.Loop, variable: "i", count: 2), S(ActionKind.Loop, variable: "j", count: 2), S(T, "{{i}}{{j}}"), S(ActionKind.EndLoop), S(ActionKind.EndLoop)) == "11,12,21,22", "Nested loops");
+            Assert(Trace(S(ActionKind.Loop, variable: "i", count: 10), S(ActionKind.If, "{{i}}", value: "3"), S(ActionKind.ExitLoop), S(ActionKind.EndIf), S(T, "{{i}}"), S(ActionKind.EndLoop), S(T, "out")) == "1,2,out", "Exit loop");
+            Assert(Trace(S(ActionKind.SetVariable, "0", "c"), S(ActionKind.LoopWhile, "{{c}}", condition: ConditionKind.LessThan, value: "3"), S(ActionKind.IncrementVariable, variable: "c"), S(T, "{{c}}"), S(ActionKind.EndLoop)) == "1,2,3", "Loop while");
+            Assert(Trace(S(ActionKind.SetVariable, "0", "c"), S(ActionKind.Label, "top"), S(ActionKind.IncrementVariable, variable: "c"), S(ActionKind.If, "{{c}}", condition: ConditionKind.LessThan, value: "3"), S(ActionKind.GoTo, "top"), S(ActionKind.EndIf), S(T, "{{c}}"), S(ActionKind.StopWorkflow), S(T, "never")) == "3", "Go to / Stop");
+            Assert(Trace(S(ActionKind.Loop, count: 5, enabled: false), S(T, "x"), S(ActionKind.EndLoop), S(T, "end")) == "end", "Disabled loop");
+        });
+        Check("Block structure errors are reported before running", () => {
+            Throws(() => FlowPlan.Build(new List<Step> { new() { Kind = ActionKind.If } }));
+            Throws(() => FlowPlan.Build(new List<Step> { new() { Kind = ActionKind.Loop }, new() { Kind = ActionKind.EndIf } }));
+            Throws(() => FlowPlan.Build(new List<Step> { new() { Kind = ActionKind.ExitLoop } }));
+            Throws(() => FlowPlan.Build(new List<Step> { new() { Kind = ActionKind.GoTo, Text = "missing" } }));
+            Throws(() => WorkflowRunner.Validate(new Step { Kind = ActionKind.GetDateTime, Variable = "now", Text = "%" }));
+            Throws(() => WorkflowRunner.Validate(new Step { Kind = ActionKind.RandomNumber, Variable = "r", X = 5, Y = 1 }));
+        });
+        Check("Text, date, random, file and command actions", () => {
+            var runner = new WorkflowRunner(Dispatcher.CurrentDispatcher);
+            var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".txt");
+            try {
+                runner.Run(new Workflow { Steps = new() {
+                    new Step { Kind = ActionKind.TransformText, Operation = TextOperation.RegexExtract, Text = "Order #4521 shipped", Value = @"#(\d+)", Variable = "id", DelayMs = 0 },
+                    new Step { Kind = ActionKind.GetDateTime, Text = "yyyy", Variable = "year", DelayMs = 0 },
+                    new Step { Kind = ActionKind.RandomNumber, X = 7, Y = 7, Variable = "r", DelayMs = 0 },
+                    new Step { Kind = ActionKind.WriteFile, Text = path, Value = "{{id}}-日本", DelayMs = 0 },
+                    new Step { Kind = ActionKind.WriteFile, Text = path, Value = "+", Wait = true, DelayMs = 0 },
+                    new Step { Kind = ActionKind.ReadFile, Text = path, Variable = "back", DelayMs = 0 },
+                    new Step { Kind = ActionKind.RunCommand, Text = "echo hello", Variable = "out", TimeoutMs = 20000, DelayMs = 0 }
+                }}, CancellationToken.None).GetAwaiter().GetResult();
+                Assert(runner.Values["id"] == "4521" && runner.Values["year"] == DateTime.Now.Year.ToString() && runner.Values["r"] == "7", "Data actions failed");
+                Assert(runner.Values["back"] == "4521-日本+", "File round trip failed");
+                Assert(runner.Values["out"] == "hello" && runner.Values["exit_code"] == "0", $"Command failed: '{runner.Values["out"]}'");
+            } finally { File.Delete(path); }
+        });
         BrowserTests.Run(results);
         File.WriteAllLines("self-test-results.txt", results.Append($"{results.Count} checks passed · OpenCV {Cv2.GetVersionString()}"));
     }

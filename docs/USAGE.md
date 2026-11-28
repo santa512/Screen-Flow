@@ -47,8 +47,31 @@ The **practice window** provides a local text field, a sample address bar, and a
 | Copy page URL | Send `Ctrl+L`, `Ctrl+C`, read the changed clipboard, and save the URL to a variable |
 | Read clipboard | Store current clipboard text in a variable |
 | Set variable | Set reusable text, optionally referencing earlier variables |
+| If / Else / End if | Run a block only when a condition is true, with an optional Else block |
+| Loop / End loop | Repeat a block a fixed number of times; the optional index variable counts 1, 2, 3… |
+| Loop while | Repeat a block while a condition stays true |
+| Exit loop | Leave the innermost loop and continue after its End loop |
+| Label / Go to label | Jump to a named spot in the workflow |
+| Stop workflow | End the run successfully, skipping remaining actions and cycles |
+| Middle click | Middle-click a fixed desktop coordinate |
+| Drag and drop | Press the left button at a start point, move to an end point, release |
+| Launch application | Start a program, document or shortcut with optional arguments; optionally wait for it to exit |
+| Open file or URL | Open a web address, file or folder with its default app |
+| Focus window | Wait for a window whose title matches, restore it, and bring it to the front |
+| Wait for window | Wait until a matching window opens, or closes |
+| Close window | Ask the first matching window to close (like clicking X) |
+| Run command | Run a hidden Command Prompt or PowerShell command; store its output and `{{exit_code}}` |
+| Take screenshot | Save the whole desktop as a PNG |
+| Show message | Show a message box and pause until OK |
+| Ask for input | Ask for a value during the run; Cancel stops the workflow |
+| Set clipboard | Put text on the clipboard |
+| Increase variable | Add (or subtract) a number; missing variables start at 0 |
+| Transform text | Trim, upper/lowercase, replace, regex extract, character count, or substring into a variable |
+| Get date and time | Store the current date/time using a .NET format such as `yyyy-MM-dd HH:mm:ss` |
+| Random number | Store a random whole number between a minimum and maximum |
+| Read text file / Write text file | Read a file into a variable; write or append UTF-8 text, creating folders as needed |
 
-Every non-delay action can pause afterward. A failed action stops the workflow and identifies the failing step in the activity log. Input is sent to the currently focused app; there is no background interaction with hidden windows.
+Every non-delay action can pause afterward (flow-control markers run instantly). A failed action stops the workflow and identifies the failing step in the activity log. Input is sent to the currently focused app; there is no background interaction with hidden windows.
 
 ## Example: focus the browser and open a new tab
 
@@ -87,7 +110,19 @@ Variable names contain letters, digits, and underscores and start with a letter 
 - Windows permits injected input only into applications at an equal or lower privilege level. Run ScreenFlow and the target at the same privilege level. Secure desktops and lock screens are unsupported.
 - F8 is reserved for stopping. It is registered only during a run, with an additional key-state polling fallback.
 
-This version provides a sequential editor with full-workflow repetition. It does not include passive action recording, OCR, branches, nested loops, or a scheduler.
+## Flow control
+
+Adding **If**, **Loop**, or **Loop while** also adds the matching **End if** / **End loop**. New actions go directly below the selected step, so select the If (or a step inside it) before adding the actions that belong in the block. Blocks can nest; the step list indents their contents.
+
+Conditions compare two values that can contain `{{variables}}`. When both sides are numbers they compare numerically (`10` is greater than `9`); otherwise text comparisons ignore case. Other conditions check whether a captured image is visible right now, whether a window with a matching title exists, or whether a file or folder exists.
+
+Unchecking an If or Loop switches off the whole block. Else / End markers always keep the structure intact. Structure mistakes (a missing End if, a Go to with no matching label, Exit loop outside a loop) are reported before the run starts. F8 stops endless loops and jumps.
+
+Window title matching ignores case and matches any title containing the text. Use `*` as a wildcard to match the whole title, for example `Report*Excel`.
+
+Run command runs hidden without a console window. Command Prompt is the default; tick PowerShell to use it instead. A non-zero exit code does not stop the run, so branch on `{{exit_code}}` with If.
+
+This version does not include passive action recording, OCR, or a scheduler.
 
 ## Develop and verify
 
@@ -99,7 +134,7 @@ Requires Windows x64 and a .NET SDK supporting .NET 10. Package restore requires
 
 The build uses workspace-local NuGet packages and build settings. Build artifacts and downloaded packages are ignored by Git.
 
-The 19 checks in `--self-test` cover native input structure layout, keyboard parsing, variable expansion, OpenCV exact/scaled/absent matches, invalid settings, embedded-image save/load, repeated runs, disabled steps, browser selection (including multiple synthetic Octium profiles), focus-before-input ordering, focus failure, lost focus, cancellation, and new browser action save/load. Browser tests use fake window candidates and send no real browser input.
+The 22 checks in `--self-test` cover native input structure layout, keyboard parsing, variable expansion, OpenCV exact/scaled/absent matches, invalid settings, embedded-image save/load, repeated runs, disabled steps, browser selection (including multiple synthetic Octium profiles), focus-before-input ordering, focus failure, lost focus, cancellation, new browser action save/load, If / Else / loop / Go to ordering, block-structure errors, and text, date, file and command actions. Browser tests use fake window candidates and send no real browser input.
 
 An interactive integration test exercises native minimize/restore and foreground activation, real `Ctrl+T` input, desktop capture, OpenCV matching, URL copying, Unicode typing, keyboard shortcuts, and mouse clicks **only in ScreenFlow's own practice window**. It supplies that fixture as the sole browser candidate, so browser discovery is never used during the test:
 
